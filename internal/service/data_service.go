@@ -7,6 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
+// DataServicer — интерфейс для gRPC Deps (Dependency Inversion).
+type DataServicer interface {
+	GetHistory(sessionID uuid.UUID, limit int) ([]model.ChannelMessage, error)
+	SaveFile(sessionID, userID uuid.UUID, filename, contentType string, sizeBytes int64, storagePath string) (*model.ChannelFile, error)
+}
+
 type DataService struct {
 	db *gorm.DB
 }

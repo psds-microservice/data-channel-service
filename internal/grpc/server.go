@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Deps — зависимости gRPC-сервера
+// Deps — зависимости gRPC-сервера (D: зависимость от абстракций).
 type Deps struct {
-	Data *service.DataService
+	Data service.DataServicer
 }
 
 // Server implements data_channel_service.DataChannelServiceServer
