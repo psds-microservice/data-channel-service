@@ -1,0 +1,17 @@
+syntax = "proto3";
+package data_channel_service;
+option go_package = "github.com/psds-microservice/data-channel-service/pkg/gen/data_channel_service;data_channel_service";
+import "google/api/annotations.proto";
+
+service DataChannelService {
+  rpc GetHistory (GetHistoryRequest) returns (GetHistoryResponse) {
+    option (google.api.http) = { get: "/data/{session_id}/history" }; }
+  rpc UploadFile (UploadFileRequest) returns (UploadFileResponse) {
+    option (google.api.http) = { post: "/data/file"; body: "*" }; }
+}
+
+message GetHistoryRequest { string session_id = 1; int32 limit = 2; int32 offset = 3; }
+message UploadFileRequest { string session_id = 1; string user_id = 2; string filename = 3; bytes content = 4; }
+message GetHistoryResponse { repeated DataMessage messages = 1; }
+message DataMessage { string id = 1; string sender_id = 2; string content = 3; string type = 4; }
+message UploadFileResponse { string file_id = 1; string url = 2; }
