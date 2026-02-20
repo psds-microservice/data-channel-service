@@ -1,8 +1,8 @@
 services:
   app:
     build:
-      context: ..
-      dockerfile: deployments/Dockerfile
+      context: ../..
+      dockerfile: data-channel-service/deployments/Dockerfile
     ports:
       - "8093:8093"
     environment:
