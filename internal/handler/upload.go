@@ -3,12 +3,16 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/psds-microservice/data-channel-service/internal/service"
 )
 
 const maxMultipartMemory = 32 << 20 // 32 MiB
+const maxFileSizeBytes = 50 << 20   // 50 MiB
+const maxFilenameLen = 255
 
 // UploadFileMultipart обрабатывает POST /data/file с multipart/form-data (session_id, user_id, file).
 // Возвращает JSON: {"id": "...", "filename": "...", "url": "..."} для совместимости с тестами и клиентами.
@@ -43,14 +47,30 @@ func UploadFileMultipart(dataSvc *service.DataService) http.HandlerFunc {
 			http.Error(w, "file required", http.StatusBadRequest)
 			return
 		}
-		_ = file.Close()
-		filename := header.Filename
-		if filename == "" {
+		defer file.Close()
+		if header.Size < 0 || header.Size > maxFileSizeBytes {
+			http.Error(w, "file size exceeds limit or invalid", http.StatusBadRequest)
+			return
+		}
+		// Path traversal protection: use only base name, no directory components.
+		rawName := header.Filename
+		if rawName == "" {
+			rawName = "file"
+		}
+		filename := filepath.Base(strings.TrimSpace(rawName))
+		if filename == "" || filename == "." || strings.Contains(filename, "..") {
 			filename = "file"
+		}
+		if len(filename) > maxFilenameLen {
+			filename = filename[:maxFilenameLen]
 		}
 		contentType := header.Header.Get("Content-Type")
 		if contentType == "" {
 			contentType = "application/octet-stream"
+		}
+		if err := dataSvc.ValidateFile(filename, header.Size, ""); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		f, err := dataSvc.SaveFile(sessionID, userID, filename, contentType, header.Size, "")
 		if err != nil {

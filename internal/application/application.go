@@ -23,7 +23,6 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"gorm.io/gorm"
 )
 
 // serveOpenAPISpec отдаёт api/openapi.json или api/openapi.swagger.json (из proto: make proto-openapi).
@@ -59,7 +58,6 @@ type API struct {
 	httpSrv *http.Server
 	grpcSrv *grpc.Server
 	lis     net.Listener
-	db      *gorm.DB
 }
 
 // NewAPI создаёт приложение для режима api.
@@ -140,7 +138,6 @@ func NewAPI(cfg *config.Config) (*API, error) {
 		httpSrv: httpSrv,
 		grpcSrv: grpcSrv,
 		lis:     lis,
-		db:      db,
 	}, nil
 }
 
