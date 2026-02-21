@@ -17,6 +17,7 @@ type DataConn struct {
 	UserID    uuid.UUID
 	conn      *websocket.Conn
 	send      chan []byte
+	sendOnce  sync.Once
 }
 
 func NewDataHub() *DataHub {
@@ -25,13 +26,15 @@ func NewDataHub() *DataHub {
 	}
 }
 
+func (c *DataConn) closeSend() { c.sendOnce.Do(func() { close(c.send) }) }
+
 func (h *DataHub) Register(sessionID, userID uuid.UUID, conn *websocket.Conn) *DataConn {
 	h.mu.Lock()
 	if h.sessions[sessionID] == nil {
 		h.sessions[sessionID] = make(map[uuid.UUID]*DataConn)
 	}
 	if old, ok := h.sessions[sessionID][userID]; ok {
-		close(old.send)
+		old.closeSend()
 		delete(h.sessions[sessionID], userID)
 	}
 	c := &DataConn{SessionID: sessionID, UserID: userID, conn: conn, send: make(chan []byte, 256)}
@@ -44,7 +47,7 @@ func (h *DataHub) Unregister(sessionID, userID uuid.UUID) {
 	h.mu.Lock()
 	if m := h.sessions[sessionID]; m != nil {
 		if c, ok := m[userID]; ok {
-			close(c.send)
+			c.closeSend()
 			delete(m, userID)
 		}
 		if len(m) == 0 {
